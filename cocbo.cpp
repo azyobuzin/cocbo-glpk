@@ -33,16 +33,16 @@ struct ScopedGlpProb {
   }
 };
 
-void ClusterWithCocbo(const arma::mat &data, size_t k, size_t lower_bound,
+void ClusterWithCocbo(const arma::mat &data, size_t K, size_t lower_bound,
                       size_t upper_bound, arma::Row<size_t> &assignments,
                       arma::mat &centroids, size_t max_iterations = 1000) {
   if (data.empty()) throw std::invalid_argument("data is empty");
-  if (k == 0 || lower_bound > k || upper_bound <= k)
+  if (K == 0 || lower_bound > K || upper_bound <= K)
     throw std::invalid_argument("k is out of range");
 
   // 最適化問題を解ける条件を満たす K であることを確認
-  size_t n_cluster = data.n_cols / k;
-  if (data.n_cols > (k + 1) * n_cluster)
+  size_t n_cluster = data.n_cols / K;
+  if (data.n_cols > (K + 1) * n_cluster)
     throw std::invalid_argument("can't assign cluster with the specified k");
 
   glp_prob *lp = glp_create_prob();
@@ -61,7 +61,7 @@ void ClusterWithCocbo(const arma::mat &data, size_t k, size_t lower_bound,
     }
   }
 
-  glp_add_rows(lp, data.n_cols * n_cluster);
+  glp_add_rows(lp, data.n_cols + n_cluster);
 
   {
     std::vector<int> indices(data.n_cols + 1);
@@ -122,7 +122,7 @@ void ClusterWithCocbo(const arma::mat &data, size_t k, size_t lower_bound,
         double u = glp_get_col_prim(lp, k * n_cluster + i + 1);
         assert(u == 0 || u == 1);
         if (u == 1) {
-          assignments[k] = i;
+          assignments(k) = i;
           break;
         }
         if (i >= n_cluster - 1) {
